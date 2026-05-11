@@ -87,6 +87,12 @@ def imprimir_registre(registre):
                     print(f"  ${codi} {valor}")
         else:
             print(f"Control {tag}: {contingut}")
+
+def marc21_a_json(registre):
+    """
+    Funció per convertir un registre processat a un format JSON.
+    """
+    pass
     
 
     
