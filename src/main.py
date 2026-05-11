@@ -1,3 +1,5 @@
+from prepara import prepara
+
 def main():
     print("Sistema d'entrenament de LEMAC.AI")
     while True:
@@ -5,7 +7,7 @@ def main():
         opcio = input("Selecciona una opció: ")
         if opcio == "1":
             print("Preparant dades...")
-            # Aquí aniria el codi per preparar les dades
+            prepara()
         elif opcio == "2":
             print("Entrenant model...")
             # Aquí aniria el codi per entrenar el model
