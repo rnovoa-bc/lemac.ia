@@ -1,5 +1,5 @@
 from prepara import prepara
-
+from entrenar import entrenar_model
 def main():
     print("Sistema d'entrenament de LEMAC.AI")
     while True:
@@ -10,7 +10,7 @@ def main():
             prepara()
         elif opcio == "2":
             print("Entrenant model...")
-            # Aquí aniria el codi per entrenar el model
+            entrenar_model()
         elif opcio == "3":
             print("Avaluant model...")
             # Aquí aniria el codi per avaluar el model

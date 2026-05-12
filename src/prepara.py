@@ -5,11 +5,11 @@ def prepara():
     Legirem un fitxer ISO2709 amb les dades de la LEMAC
     i el convertirem a un format JSON que serà més fàcil d'utilitzar per entrenar el model.
     """
-
     compatador = 0
     for registre in llegir_registres_iso():
         registre_processat = analitza_registre(registre)
-        imprimir_registre(registre_processat)
+        registre_json = marc21_a_json(registre_processat)
+        print(json.dumps(registre_json, ensure_ascii=False))
         compatador += 1
         if compatador >= 10:
             break
@@ -61,9 +61,8 @@ def analitza_registre(registre):
             # camps d'informació
             indicadors = camp_dades[:2].decode("utf-8")
             subcamps_dades = camp_dades[2:]
-
             subcamps = {}
-            for subcamp in camp_dades.split(b"\x1f")[1:]:  # Els subcamps comencen amb un separador de subcamp (0x1f)
+            for subcamp in subcamps_dades.split(b"\x1f")[1:]: # Els subcamps comencen amb un separador de subcamp (0x1f)
                 if subcamp:
                     codi = subcamp[:1].decode("utf-8")
                     valor = subcamp[1:].decode("utf-8")
@@ -78,21 +77,56 @@ def imprimir_registre(registre):
     Funció per imprimir un registre en pantalla per depurar analiza_registre.
     """
     print("#"*80)
-    print(f"Capçalera: {registre["capacalera"]}")
+    print(f"Capçalera: {registre["capacalera"].decode("utf-8")}")
     for tag, contingut in registre["etiquetes"].items():
-        if isinstance(contingut, dict):
-            print(f"Etiqueta: {tag}; Indicadors: {field['indicators'].replace(" ", "□")}")
-            for codi, valors in field["subcamps"].items():
-                for valor in valors:
-                    print(f"  ${codi} {valor}")
-        else:
-            print(f"Control {tag}: {contingut}")
+        for item in contingut:
+            if isinstance(item, dict):
+                print(f"Etiqueta: {tag}; Indicadors: {item['indicadors'].replace(" ", "□")}")
+                for codi, valors in item["subcamps"].items():
+                    for valor in valors:
+                        print(f"  ${codi} {valor}")
+            else:
+                print(f"Control {tag}: {contingut}")
 
 def marc21_a_json(registre):
     """
     Funció per convertir un registre processat a un format JSON.
     """
-    pass
-    
+    registre_json = {}
+    for tag, contingut in registre["etiquetes"].items():
+        for etiqueta in contingut:
+            if tag in ["100", "110", "111", "130", "150", "151", "155"]:
+                registre_json.setdefault("terme_acceptat", []).append(etiqueta_llegible(etiqueta["subcamps"],"avxyz"))
+            elif tag in ["400", "410", "411", "430", "450", "451", "455"]:
+                registre_json.setdefault("terme_no_acceptat", []).append(etiqueta_llegible(etiqueta["subcamps"], "avxyz"))
+            elif tag in ["180"]:
+                registre_json .setdefault("subd_tematica", []).append(etiqueta_llegible(etiqueta["subcamps"], "avxyz"))
+            elif tag in ["480"]:
+                registre_json.setdefault("subd_tematica_no_acceptada", []).append(etiqueta_llegible(etiqueta["subcamps"], "avxyz"))
+            elif tag in ["185"]:
+                registre_json.setdefault("subd_forma", []).append(etiqueta_llegible(etiqueta["subcamps"], "avxyz"))
+            elif tag in ["485"]:   
+                registre_json.setdefault("subd_forma_no_acceptada", []).append(etiqueta_llegible(etiqueta["subcamps"], "avxyz"))
 
+            elif tag in ["260", "380", "680"]:
+                registre_json.setdefault("altres", []).append(etiqueta_llegible(etiqueta["subcamps"], "avxyz"))
+    return registre_json
+    
+def etiqueta_llegible(subcamps, subcamps_acceptats):
+    """
+    Funció per convertir els subcamps d'una etiqueta a un format més llegible.
+    """
+    valors_valids = []
+    for codi, valors in subcamps.items():
+        if codi in subcamps_acceptats:
+            for valor in valors:
+                if valor == "wnnea" or valor == "wnne" or valor == "g":
+                    continue
+                if codi in ["v", "x", "y", "z"]:
+                    valor = "--" + valor
+                else:
+                    valor = " " + valor
+                valors_valids.append(valor)
+    return "".join(valors_valids).strip()
+    
     
